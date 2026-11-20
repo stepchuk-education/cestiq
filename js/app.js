@@ -314,7 +314,7 @@ function fillSheet(q) {
   if (!x) {
     $('#sTitle').textContent = t('remember'); $('#sAttn').style.display = 'none';
     const tr = TRQ(q.id);
-    $('#srule').innerHTML = `<span class="qtext plain">${hlText(q.q)}</span> <b class="ans">${esc(q.a)}</b>` + (tr ? `<div class="trsheet"><span class="lbl">${t('tr_l')}</span><br>${esc(tr[0])} <b>${esc(tr[1])}</b></div>` : '');
+    $('#srule').innerHTML = `<span class="qtext plain">${hlText(q.q)}</span> <b class="ans">${esc(q.a)}</b>` + (tr ? `<div class="trsheet"><span class="lbl">${t('tr_l')} · № ${q.id}</span><br>${esc(tr[0])} <b>${esc(tr[1])}</b></div>` : '');
     $('.sheet details').style.display = 'none'; return;
   }
   $('#sAttn').style.display = '';
@@ -391,7 +391,7 @@ function renderLearn(q, first) {
   const tr = TRQ(q.id);
   $('#qwrap').innerHTML = `<div class="qcard learncard" id="qc" style="${first ? '' : 'transform:translateX(60px);opacity:0'}">${mediaHTML(q, false)}<div class="lbl" style="margin-bottom:10px">${esc(nameOf(TOP[q.t]))}</div>
     <div class="qtext" id="qt">${hlText(q.q)}</div><div class="learnans qtext in">→ ${hlText(q.a)}</div>
-    ${tr ? `<div class="trbox" id="trbox"><div class="lbl">${t('tr_l')}</div><p>${esc(tr[0])} <b>${esc(tr[1])}</b></p></div>` : ''}
+    ${tr ? `<div class="trbox" id="trbox"><div class="lbl">${t('tr_l')} · № ${q.id}</div><p>${esc(tr[0])} <b>${esc(tr[1])}</b></p></div>` : ''}
     ${L !== 'sk' ? `<p class="dhint" style="margin-top:12px">${t('tap_hint')}</p>` : ''}</div>
     <div class="learnbtns">${tr ? `<button class="cta ghost" id="trbtn">${t('tr_btn')}</button>` : ''}<button class="cta" id="gotit">${t('got_it')}<b>→</b></button></div>`;
   $('#qpad').scrollTop = 0;
@@ -407,7 +407,7 @@ function leaveCard(cb) {
 function renderQ(q, src, first) {
   headNum(t('q').toUpperCase(), SS.done + 1, SS.total);
   const opts = optionsFor(q);
-  $('#qwrap').innerHTML = `<div class="qcard" id="qc" style="${first ? '' : 'transform:translateX(60px);opacity:0'}">${mediaHTML(q, true)}<div class="lbl qlbl" style="margin-bottom:10px"><span>${esc(nameOf(SEC[q.s]))}${src === 'rev' ? ' · ↻' : ''}</span>${TRQ(q.id) ? `<button class="trchip" id="trq">${t('tr_short')}</button>` : ''}</div><div class="qtext" id="qt">${hlText(q.q, (EXPL[q.id] || {}).trap || [])}</div>${TRQ(q.id) ? `<div class="trbox" id="trbox"><p>${esc(TRQ(q.id)[0])} …</p></div>` : ''}</div>
+  $('#qwrap').innerHTML = `<div class="qcard" id="qc" style="${first ? '' : 'transform:translateX(60px);opacity:0'}">${mediaHTML(q, true)}<div class="lbl qlbl" style="margin-bottom:10px"><span>${esc(nameOf(SEC[q.s]))}${src === 'rev' ? ' · ↻' : ''}</span>${TRQ(q.id) ? `<button class="trchip" id="trq">${t('tr_short')}</button>` : ''}</div><div class="qtext" id="qt">${hlText(q.q, (EXPL[q.id] || {}).trap || [])}</div>${TRQ(q.id) ? `<div class="trbox" id="trbox"><div class="lbl">№ ${q.id}</div><p>${esc(TRQ(q.id)[0])} …</p></div>` : ''}</div>
     <div class="opts">${opts.map((o, i) => `<button class="opt" data-ok="${o === q.a}" style="opacity:0;transform:translateY(16px)"><span class="k">${'ABC'[i]}</span><span class="t">${esc(o)}</span></button>`).join('')}</div>`;
   $('#qpad').scrollTop = 0;
   requestAnimationFrame(() => requestAnimationFrame(() => {
