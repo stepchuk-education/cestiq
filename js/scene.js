@@ -52,13 +52,16 @@ const spill = new THREE.PointLight('#fff', 0, 6, 1.5); tl.add(spill);
 scene.add(tl);
 
 // ---------- layout ----------
-let W = 1, H = 1, cover = { s: 1, ox: 0, oy: 0 }, vpx = 0, vpy = 0;
+let maxShear = 0.3, W = 1, H = 1, cover = { s: 1, ox: 0, oy: 0 }, vpx = 0, vpy = 0;
 function layout() {
   W = dev.clientWidth; H = dev.clientHeight;
-  const s = Math.max(W / IMG_W, H / IMG_H); const iw = IMG_W * s, ih = IMG_H * s;
+  const s = Math.max(W * 1.36 / IMG_W, H / IMG_H); /* extra width: the lane shear never shows the edge */ const iw = IMG_W * s, ih = IMG_H * s;
   cover = { s, ox: (W - iw) / 2, oy: (H - ih) / 2 };
   road.style.width = iw + 'px'; road.style.height = ih + 'px'; road.style.left = cover.ox + 'px'; road.style.top = cover.oy + 'px';
   vpx = cover.ox + VP[0] * iw; vpy = cover.oy + VP[1] * ih;
+  // how far the photo can be sheared before its left (above horizon) or right (below) edge shows
+  const overR = cover.ox + iw - W, overL = -cover.ox;
+  maxShear = Math.max(0, Math.min(overR * 0.92 / Math.max(1, H - vpy), overL * 0.92 / Math.max(1, vpy)));
   road.style.transformOrigin = `${vpx - cover.ox}px ${vpy - cover.oy}px`;
   // 3D canvas: centred on the vanishing point so the horizon matches the photo
   const ch = Math.max(vpy, H - vpy) * 2, cw = Math.max(vpx, W - vpx) * 2;
@@ -85,7 +88,7 @@ function frame(now) {
   const jx = (Math.sin(ts * 41) * 0.5 + Math.sin(ts * 23.7) * 0.28) * shakeCur, jy = (Math.sin(ts * 33 + 1.3) * 0.42) * shakeCur;
   const lk = Math.max(0, Math.min(1, (now - lT0) / lDur)); lane = lFrom + (lTo - lFrom) * ease(lk);
   // right-lane view: shear around the horizon so the near road slides left, the vanishing point stays
-  const skew = -Math.atan((0.26 * W) / Math.max(1, H - vpy)) * 180 / Math.PI * lane;
+  const skew = -Math.atan(Math.min((0.26 * W) / Math.max(1, H - vpy), maxShear)) * 180 / Math.PI * lane;
   road.style.transform = `translate(${jx}px,${jy}px) scale(${z}) skewX(${skew}deg)`;
   canvas.style.transform = `translate(${jx}px,${jy}px)`;
   camera.zoom = z; camera.updateProjectionMatrix();
