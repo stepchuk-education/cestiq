@@ -112,7 +112,7 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 window.SCN = {
-  drive(to, dur = 2200) { pFrom = prog; pTo = to; pT0 = performance.now(); pDur = dur; },
+  drive(to, dur = 2200) { pFrom = prog; pTo = 16 + to * 0.84;   /* always roll forward a bit, even at CestIQ 0 */ pT0 = performance.now(); pDur = dur; },
   setPhase(i, flicker) { if (flicker && i !== phase) { lightT = 0; setTimeout(() => { phase = i; lightT = 1; }, 420); } else phase = i; },
   lightOn(on) { lightT = on ? 1 : 0; },
   engine(on) { shake = on ? 1 : 0; },

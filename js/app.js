@@ -174,7 +174,7 @@ function startIntro() {
     setTimeout(() => { scn() && scn().drive(IQ, 2600); }, 700);
     setTimeout(() => {
       el.style.pointerEvents = 'none'; el.style.opacity = 0;
-      show('home'); scn() && scn().lane && scn().lane(1, 2600);
+      show('home'); scn() && scn().lane && scn().lane(.7, 2800);
       count($('#gnum'), 0, IQ, 1600, 0); rollDigits($('#odo'), ST.streak(), 18);
       [...$('#homeStag').children].forEach((c, i) => c.style.transitionDelay = (i * 110) + 'ms');
       setTimeout(() => $('#homeStag').classList.add('in'), 900);
