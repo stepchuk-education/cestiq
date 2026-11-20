@@ -184,8 +184,8 @@ function startIntro() {
 
 /* ---------- HOME ---------- */
 function wordOfDay() {
-  const pool = DATA.gloss.filter(g => (L === 'sk' ? g.core_sk : g.core_x) && g.ex);
-  return pool[ST.today() % pool.length];
+  const all = DATA.gloss.filter(g => (L === 'sk' ? g.core_sk : g.core_x) && g.ex), pool = all.filter(g => !wDone(g.sk));
+  const p = pool.length ? pool : all; return p[ST.today() % p.length];
 }
 function renderHome(anim) {
   IQ = ST.cestiq();
@@ -512,8 +512,10 @@ function submitExam() {
 let deckIdx = 0, known = 0, deckMode = 'rules', DECK = [];
 const markEx = (ex, re) => { if (!ex) return ''; try { return esc(ex).replace(new RegExp('(?<![\\p{L}])(?:' + re + ')\\p{L}*', 'iu'), m => `<mark>${m}</mark>`); } catch (e) { return esc(ex); } };
 function wordDeck() {
-  const mine = Object.values(MW.o).filter(w => (w.lang || L) === L || L !== 'sk').map(w => ({ kind: 'w', sk: w.sk, tr: w.tr, ex: w.ex, re: w.sk.split(' ')[0].slice(0, 5) }));
-  const pool = GL.filter(g => (L === 'sk' ? g.core_sk : g.core_x) && g.ex && !MW.has(g.sk.toLowerCase()));
+  const mineW = deckCat && deckCat !== 'mine' ? [] : Object.values(MW.o).filter(w => !wDone(w.sk)).map(w => ({ kind: 'w', sk: w.sk, tr: w.tr, ex: w.ex, re: w.sk.split(' ')[0].slice(0, 5) }));
+  if (deckCat === 'mine') return shuffle(mineW).slice(0, 14);
+  const mine = mineW;
+  const pool = dictItems().filter(g => (!deckCat || g.c === deckCat) && !wDone(g.sk) && !MW.has(g.sk.toLowerCase()));
   const off = ST.today() * 5 % Math.max(1, pool.length);
   const core = [...pool.slice(off), ...pool.slice(0, off)].slice(0, 10).map(g => ({ kind: 'w', sk: g.sk, tr: L === 'sk' ? g.def : trOf(g), ex: g.ex, re: rxSrc(g) }));
   return [...shuffle(mine), ...core].slice(0, 14);
@@ -524,7 +526,7 @@ function ruleDeck() {
   return pool.map(q => ({ kind: 'r', id: q.id, q: q.q, a: q.a, sign: q.sign, img: q.img }));
 }
 function buildDeck() { deckIdx = 0; known = 0; DECK = deckMode === 'rules' ? ruleDeck() : wordDeck(); renderDeck(); }
-$$('#cseg button').forEach(b => b.onclick = () => { deckMode = b.dataset.m; $$('#cseg button').forEach(x => x.classList.toggle('on', x === b)); $('#cseg').classList.toggle('r', deckMode === 'words'); vib(6); buildDeck(); });
+$$('#cseg button').forEach(b => b.onclick = () => { deckMode = b.dataset.m; deckCat = null; $$('#cseg button').forEach(x => x.classList.toggle('on', x === b)); $('#cseg').classList.toggle('r', deckMode === 'words'); vib(6); buildDeck(); });
 function cardHTML(c) {
   if (c.kind === 'w') return `<div class="inner"><div class="face front"><div class="stamp l">${t('again')}</div><div class="stamp r">${t('know')}</div><div class="lbl">${t('words_seg')}</div><div style="flex:1"></div><div style="font:800 34px/1.05 IT;letter-spacing:-.03em">${esc(c.sk)}</div><div class="wex">${markEx(c.ex, c.re)}</div><div style="flex:1"></div><div class="lbl" style="text-align:center">${t('flip')}</div></div>
    <div class="face back"><div class="lbl" style="color:#8b8b86">${esc(c.sk)}</div><div style="flex:1"></div><div style="font:750 ${L === 'sk' ? '20px/1.35' : '28px/1.2'} IT;letter-spacing:-.02em"><span style="color:var(--a)">→</span> ${esc(c.tr)}</div><div class="wex dark">${markEx(c.ex, c.re)}</div><div style="flex:1"></div><div class="lbl" style="text-align:center;color:#8b8b86">${t('swipe')}</div></div></div>`;
@@ -546,7 +548,7 @@ function drag(el, card) {
     if (!moved) { el.style.transition = ''; el.style.transform = ''; el.classList.toggle('flip'); vib(6); return; }
     if (Math.abs(x) > 110 || Math.abs(vx) > .6) {
       const dir = (Math.abs(x) > 110 ? Math.sign(x) : Math.sign(vx)); if (dir > 0) known++; vib(dir > 0 ? [10, 30, 10] : 20);
-      if (card.kind === 'r') { ST.grade(card.id, dir > 0 ? 2 : 0); ST.addTime(9); }
+      if (card.kind === 'r') { ST.grade(card.id, dir > 0 ? 2 : 0); ST.addTime(9); } else { wGrade(card.sk, dir > 0); ST.addTime(5); }
       el.animate([{ transform: el.style.transform }, { transform: `translate(${dir * 600}px,${y * .4 + 60}px) rotate(${dir * 28}deg)`, opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'forwards' }).onfinish = () => { deckIdx++; renderDeck(); };
       [...$('#deck').children].filter(c => c !== el).forEach(c => { const m = c.style.transform.match(/translateY\(([\d.]+)px\) scale\(([\d.]+)\)/); if (m) { c.style.transform = `translateY(${Math.max(0, +m[1] - 14)}px) scale(${Math.min(1, +m[2] + .05)})`; c.style.opacity = 1; } });
     } else { el.style.transition = 'transform .55s cubic-bezier(.3,1.5,.5,1)'; el.style.transform = ''; Lb.style.opacity = 0; Rb.style.opacity = 0; }
@@ -555,41 +557,72 @@ function drag(el, card) {
 }
 
 /* ---------- DICTIONARY ---------- */
-let dtab = 'core';
+// word progress: ST.S.words[key] = { ok: correct swipes, st: 'hide' (already know / obvious) }
+let dview = 'topics', dcat = null, dshowDone = false, deckCat = null;
 const nm = s => String(s).toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
 const dictItems = () => GL.filter(g => L === 'sk' ? g.core_sk : g.core_x);
 const CAT_C = { road: '#4A7FB8', move: '#E0703A', signs: '#E3A321', rules: '#D2506E', people: '#8E6CC8', vehicle: '#3A8FD9', parts: '#B8873F', gear: '#2FA37A', weather: '#4DB6C9', docs: '#7A8F5A' };
 const CAT_O = Object.keys(CAT_C);
+const WK = k => (ST.S.words || (ST.S.words = {}))[String(k).toLowerCase()];
+const wDone = k => { const w = WK(k); return !!w && (w.st === 'hide' || w.ok >= 2); };
+function wSet(k, f) { const W = ST.S.words || (ST.S.words = {}); k = String(k).toLowerCase(); const w = W[k] || (W[k] = { ok: 0 }); f(w); w.last = Date.now(); ST.save(); }
+const wHide = k => wSet(k, w => w.st = 'hide');
+const wRestore = k => wSet(k, w => { delete w.st; w.ok = 0; });
+const wGrade = (k, ok) => wSet(k, w => { w.ok = ok ? (w.ok || 0) + 1 : 0; });
+const subOf = g => L === 'sk' ? (g.def || '').replace(/^(.{0,58}).*$/, (m, a) => m.length > 58 ? a + '…' : m) : trOf(g);
 function renderCats() {
-  $('#cats').innerHTML = `<button data-c="core" class="${dtab === 'core' ? 'on' : ''}">${t('core')}</button><button data-c="mine" class="${dtab === 'mine' ? 'on' : ''}">${t('mine')}${MW.size ? ` · ${MW.size}` : ''}</button><button class="learnw" id="learnW">🃏 ${t('learn_words')}</button>`;
-  $$('#cats [data-c]').forEach(b => b.onclick = () => { dtab = b.dataset.c; vib(5); renderCats(); renderTerms(true); });
-  $('#learnW').onclick = () => { deckMode = 'words'; $$('#cseg button').forEach(x => x.classList.toggle('on', x.dataset.m === 'words')); $('#cseg').classList.add('r'); show('cards'); };
+  const items = dictItems(), done = items.filter(g => wDone(g.sk)).length, left = items.length - done, pc = items.length ? done / items.length * 100 : 0;
+  $('#cats').innerHTML = `<div class="dprog"><div class="dpn"><b>${done}</b><span>/ ${items.length}</span></div><div class="dpt"><div>${t('d_learned')}</div><small>${left ? t('d_left', { n: left }) : t('d_all')}</small></div></div><div class="dbar"><i style="width:${pc}%"></i></div>
+   <div class="seg2 dseg ${dview === 'mine' ? 'r' : ''}"><button data-v="topics" class="${dview !== 'mine' ? 'on' : ''}">${t('d_topics')}</button><button data-v="mine" class="${dview === 'mine' ? 'on' : ''}">${t('mine')}${MW.size ? ` · ${MW.size}` : ''}</button><i></i></div>`;
+  $$('#cats [data-v]').forEach(b => b.onclick = () => { dview = b.dataset.v; dcat = null; vib(5); renderCats(); renderTerms(true); });
+}
+function termRow(g, done) {
+  const k = g.sk.toLowerCase();
+  return `<div class="term ${done ? 'done' : ''}" data-id="${g.id}" style="--c:${CAT_C[g.c] || 'var(--a)'}"><button class="row"><div style="flex:1;min-width:0"><div class="sk">${esc(g.sk)}</div><div class="ua">${esc(subOf(g))}</div></div>
+   <span class="star ${MW.has(k) ? 'on' : ''}" data-star="${g.id}" aria-label="★">★</span>${done ? `<span class="wbtn" data-restore="${esc(k)}" aria-label="${t('d_restore')}">↺</span>` : `<span class="wbtn" data-hide="${esc(k)}" aria-label="${t('d_hide')}">✓</span>`}</button>
+   <div class="more"><div><div class="box">${L === 'sk' && g.def ? `<span class="lbl">${t('def')}</span><br>${esc(g.def)}` : ''}${g.tip && L === 'ua' ? `<div class="tipx">💡 ${esc(g.tip)}</div>` : ''}${g.ex ? `<div style="margin-top:9px"><span class="lbl">${t('example')}</span><br>${markEx(g.ex, rxSrc(g))}</div>` : ''}</div></div></div></div>`;
 }
 function renderTerms(anim) {
   const q = nm($('#dq').value || ''); let html = '';
-  if (dtab === 'mine') {
-    const arr = Object.entries(MW.o).filter(([k, w]) => !q || nm(w.sk).includes(q) || nm(w.tr).includes(q));
-    html = arr.length ? arr.map(([k, w]) => `<div class="term" data-k="${esc(k)}"><button class="row"><div><div class="sk">${esc(w.sk)}</div><div class="ua">${esc(L === 'sk' ? (w.tr || '').slice(0, 70) : w.tr)}</div></div><span class="star on" data-del="${esc(k)}">★</span></button><div class="more"><div><div class="box">${w.ex ? `<span class="lbl">${t('example')}</span><br>${esc(w.ex)}` : ''}</div></div></div></div>`).join('') : `<div class="empty">${t('empty_mine')}</div>`;
-  } else {
-    let items = dictItems(); if (q) items = items.filter(g => nm(g.sk).includes(q) || nm(L === 'sk' ? (g.def || '') : trOf(g)).includes(q));
-    items.sort((a, b) => CAT_O.indexOf(a.c) - CAT_O.indexOf(b.c)); let lastC = '';
-    html = items.map(g => {
-      const k = g.sk.toLowerCase(); const hdr = g.c !== lastC ? (lastC = g.c, `<div class="dgrp" style="--c:${CAT_C[g.c]}"><i></i>${t('cat_' + g.c)}<span>${items.filter(x => x.c === g.c).length}</span></div>`) : '';
-      const sub = L === 'sk' ? (g.def || '').replace(/^(.{0,58}).*$/, (m, a) => m.length > 58 ? a + '…' : m) : trOf(g);
-      return hdr + `<div class="term" data-id="${g.id}" style="--c:${CAT_C[g.c] || 'var(--a)'}"><button class="row"><div><div class="sk">${esc(g.sk)}</div><div class="ua">${esc(sub)}</div></div><span class="star ${MW.has(k) ? 'on' : ''}" data-star="${g.id}">★</span></button><div class="more"><div><div class="box">${L === 'sk' && g.def ? `<span class="lbl">${t('def')}</span><br>${esc(g.def)}` : ''}${g.tip && L === 'ua' ? `<div class="tipx">💡 ${esc(g.tip)}</div>` : ''}${g.ex ? `<div style="margin-top:9px"><span class="lbl">${t('example')}</span><br>${markEx(g.ex, rxSrc(g))}</div>` : ''}</div></div></div></div>`;
-    }).join('');
+  const items = dictItems();
+  if (q) {   // search across everything
+    const res = items.filter(g => nm(g.sk).includes(q) || nm(L === 'sk' ? (g.def || '') : trOf(g)).includes(q));
+    html = res.length ? res.map(g => termRow(g, wDone(g.sk))).join('') : `<div class="empty">—</div>`;
+  } else if (dview === 'mine') {
+    const arr = Object.entries(MW.o);
+    html = arr.length ? `<button class="cta dlearn" data-learn="mine">🃏 ${t('learn_words')}<b>→</b></button>` + arr.map(([k, w]) => `<div class="term ${wDone(k) ? 'done' : ''}" data-k="${esc(k)}"><button class="row"><div style="flex:1;min-width:0"><div class="sk">${esc(w.sk)}</div><div class="ua">${esc(L === 'sk' ? (w.tr || '').slice(0, 70) : w.tr)}</div></div>${wDone(k) ? '<span class="wok">✓</span>' : ''}<span class="wbtn del" data-del="${esc(k)}" aria-label="✕">✕</span></button><div class="more"><div><div class="box">${w.ex ? `<span class="lbl">${t('example')}</span><br>${esc(w.ex)}` : ''}</div></div></div></div>`).join('') : `<div class="empty">${t('empty_mine')}</div>`;
+  } else if (!dcat) {   // topic tiles
+    const cats = CAT_O.filter(c => items.some(g => g.c === c));
+    html = `<div class="dtiles">${cats.map(c => { const all = items.filter(g => g.c === c), dn = all.filter(g => wDone(g.sk)).length, full = dn === all.length;
+      return `<button class="dtile ${full ? 'full' : ''}" data-cat="${c}" style="--c:${CAT_C[c]}"><div class="dtn">${t('cat_' + c)}</div><div class="dtc">${full ? '✓ ' : ''}${dn}/${all.length}</div><div class="dtb"><i style="width:${dn / all.length * 100}%"></i></div></button>`; }).join('')}</div>`;
+  } else {   // one topic: words left, learned ones folded
+    const all = items.filter(g => g.c === dcat), todo = all.filter(g => !wDone(g.sk)), done = all.filter(g => wDone(g.sk));
+    html = `<div class="dhead" style="--c:${CAT_C[dcat]}"><button class="lbl dback" id="dback">← ${t('d_topics')}</button><div class="dht"><i></i>${t('cat_' + dcat)}<span>${done.length}/${all.length}</span></div></div>
+      ${todo.length ? `<button class="cta dlearn" data-learn="${dcat}">🃏 ${t('d_learn_topic')} · ${todo.length}<b>→</b></button><p class="dhint" style="margin:10px 2px">${t('d_hide_hint')}</p>` + todo.map(g => termRow(g, false)).join('') : `<div class="empty">${t('d_topic_done')}</div>`}
+      ${done.length ? `<button class="dfold ${dshowDone ? 'open' : ''}" id="dfold">${t('d_done_list')} · ${done.length} <span>${dshowDone ? '▴' : '▾'}</span></button>${dshowDone ? done.map(g => termRow(g, true)).join('') : ''}` : ''}`;
   }
   $('#terms').innerHTML = html;
-  if (anim) $$('.term').forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: Math.min(i, 10) * 35, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+  if (anim) $$('#terms .term,#terms .dtile').forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: Math.min(i, 10) * 35, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+  $$('#terms .dtile').forEach(b => b.onclick = () => { vib(6); dcat = b.dataset.cat; dshowDone = false; renderTerms(true); $('#dict .pad').scrollTop = 0; });
+  const bk = $('#dback'); if (bk) bk.onclick = () => { vib(5); dcat = null; renderTerms(true); };
+  const fd = $('#dfold'); if (fd) fd.onclick = () => { vib(5); dshowDone = !dshowDone; renderTerms(); };
+  $$('#terms [data-learn]').forEach(b => b.onclick = () => { deckCat = b.dataset.learn; deckMode = 'words'; $$('#cseg button').forEach(x => x.classList.toggle('on', x.dataset.m === 'words')); $('#cseg').classList.add('r'); show('cards'); });
   $$('.term .row').forEach(r => r.onclick = e => {
-    const st = e.target.closest('[data-star]'), del = e.target.closest('[data-del]'); const term = r.parentElement;
+    const st = e.target.closest('[data-star]'), del = e.target.closest('[data-del]'), hd = e.target.closest('[data-hide]'), rs = e.target.closest('[data-restore]'); const term = r.parentElement;
+    if (hd) { vib([8, 30, 8]); term.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(60px)' }], { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).onfinish = () => { wHide(hd.dataset.hide); renderCats(); renderTerms(); }; undoToast(hd.dataset.hide); return; }
+    if (rs) { vib(8); wRestore(rs.dataset.restore); renderCats(); renderTerms(); return; }
     if (del) { MW.del(del.dataset.del); vib(8); renderCats(); renderTerms(); return; }
     if (st) { const g = GL.find(x => x.id === +st.dataset.star), k = g.sk.toLowerCase(); if (MW.has(k)) MW.del(k); else MW.set(k, { sk: g.sk, tr: L === 'sk' ? (g.def || '') : trOf(g), ex: g.ex, lang: L }); st.classList.toggle('on'); vib(8); renderCats(); return; }
     vib(5); term.classList.toggle('open');
   });
 }
+function undoToast(k) {
+  const el = $('#toast'); el.innerHTML = `${t('d_hidden')} <button id="undo">${t('d_undo')}</button>`; el.classList.add('on'); clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('on'), 3200);
+  $('#undo').onclick = () => { wRestore(k); el.classList.remove('on'); renderCats(); renderTerms(); };
+}
 $('#dq').addEventListener('input', () => renderTerms());
-function openTermBySk(sk) { dtab = 'core'; $('#dq').value = ''; renderCats(); renderTerms(); const g = GL.find(x => x.sk === sk); setTimeout(() => { const el = g && $(`.term[data-id="${g.id}"]`); if (!el) return; el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 450); }
+function openTermBySk(sk) { $('#dq').value = ''; const g = GL.find(x => x.sk === sk); dview = 'topics'; dcat = g ? g.c : null; dshowDone = !!(g && wDone(g.sk)); renderCats(); renderTerms(); setTimeout(() => { const el = g && $(`.term[data-id="${g.id}"]`); if (!el) return; el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 450); }
 
 /* ---------- SETTINGS ---------- */
 function openSettings() {

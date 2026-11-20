@@ -8,7 +8,7 @@
   const blank = () => ({
     v: 1,
     profile: { name: '', lang: 'ua', gender: 'f', group: 'B', examDate: null, minutes: 30, sound: true, onboarded: false, created: Date.now() },
-    cards: {}, days: {}, myWords: {}, exams: [],
+    cards: {}, days: {}, myWords: {}, words: {}, exams: [],
   });
 
   let S = load();
