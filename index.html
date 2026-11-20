@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>CestIQ — vodičák bez stresu</title>
+<meta name="description" content="Tréner na teoretickú skúšku vodičského oprávnenia v SR: oficiálne otázky, denná trasa, kartičky, cvičné skúšky a vysvetlenia po ukrajinsky a anglicky.">
+<meta name="theme-color" content="#DFDFDF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CestIQ">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/inter-tight-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/extra.css">
+</head>
+<body>
+<div class="device" id="dev">
+ <img id="roadimg" src="img/road.jpg" alt="">
+ <div id="roadtint"></div>
+ <canvas id="scene3d"></canvas>
+ <button class="mute" id="mute" aria-label="sound"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path class="w1" d="M15.5 9.5a3.5 3.5 0 0 1 0 5"/><path class="w2" d="M18 7a7 7 0 0 1 0 10"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
+
+ <!-- first launch -->
+ <section class="view" id="onb"><div class="pad onb" id="onbPad"></div></section>
+
+ <!-- engine start -->
+ <section class="view" id="intro">
+  <div class="skyfade" style="--sh:44%"></div>
+  <div class="greet"><div class="lbl">CestIQ</div><h1 data-i="hello"></h1><p data-i="intro_p"></p></div>
+  <div class="startwrap"><button class="startbtn" id="startbtn"><span class="led"></span><svg viewBox="0 0 142 142"><circle cx="71" cy="71" r="66" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="4"/><circle id="ring" cx="71" cy="71" r="66" fill="none" stroke="var(--a)" stroke-width="4" stroke-linecap="round" stroke-dasharray="414.7" stroke-dashoffset="414.7"/></svg><div class="lab">ENGINE<b>START</b>STOP</div></button><div class="starthint" data-i="pull"></div></div>
+ </section>
+
+ <!-- home -->
+ <section class="view" id="home"><div class="skyfade" style="position:absolute;--sh:185px"></div><div class="pad" id="homePad" style="position:relative">
+  <div class="top"><button class="who" id="who"><div class="lbl" lang="sk">Ahoj,</div><div class="name" id="uname"></div></button>
+   <div class="tr"><div class="odo"><div class="digits" id="odo"></div><div><div class="mono" style="font-size:10px;font-weight:700;line-height:1" data-i="km"></div><div class="lbl" style="font-size:8.5px" data-i="nonstop"></div></div></div>
+    <div class="lang" id="lang"><button id="langBtn"><span id="langCode">UA</span> ▾</button><div class="pop">
+     <button data-l="ua">Українська <span>UA</span></button><button data-l="sk">Slovenčina <span>SK</span></button><button data-l="en">English <span>EN</span></button></div></div></div></div>
+  <div class="hero3" id="hero"><div class="hnum"><div class="lbl">CestIQ</div><div class="n" id="gnum">0</div><div class="status" id="status"><i></i><span></span></div></div></div>
+  <div class="homesheet"><div class="stagger" id="homeStag">
+   <div class="route"><div style="display:flex;justify-content:space-between;align-items:center"><div class="lbl" data-i="route"></div><div class="mono" style="font-size:11px;font-weight:700;color:var(--mut)"><span id="rMin">30</span> <span data-i="min"></span></div></div>
+    <div class="stops">
+     <div class="stop" id="st1"><span class="dot"></span><div class="t"><span data-i="stop_new"></span><small id="st1s"></small></div><span class="m"><span id="st1m"></span> <span data-i="min"></span></span></div>
+     <div class="stop" id="st2"><span class="dot"></span><div class="t"><span data-i="stop_rev"></span><small id="st2s"></small></div><span class="m"><span id="st2m"></span> <span data-i="min"></span></span></div>
+     <div class="stop" id="st3"><span class="dot"></span><div class="t"><span data-i="stop_cards"></span><small data-i="stop_cards_s"></small></div><span class="m">5 <span data-i="min"></span></span></div></div>
+    </div>
+   <div class="duo">
+    <button class="card" id="mock"><div class="lbl" data-i="mock"></div><div style="font:800 28px IT;letter-spacing:-.04em;margin-top:10px" id="mockDays"></div><div class="mono" style="font-size:10.5px;color:var(--mut);margin-top:4px" id="mockSub"></div></button>
+    <button class="wodc" id="wod"><div class="lbl" style="color:#8b8b86" data-i="wod"></div><div><div class="skw" id="wodSk"></div><div class="tr" id="wodTr"></div></div><div class="mono go2" data-i="to_dict"></div></button></div>
+  </div></div></div></section>
+ <div class="mini-pill" id="pill"><i></i><span id="pillnum">0</span> CestIQ</div>
+
+ <!-- topics -->
+ <section class="view" id="topics"><div class="pad">
+  <div class="lbl" data-i="sections10"></div><div class="h1" data-i="t_topics"></div><p class="dhint" data-i="topics_hint"></p>
+  <div class="bento" id="bento"></div></div></section>
+
+ <!-- quiz / learn -->
+ <section class="view" id="quiz"><div class="pad" id="qpad" style="padding-bottom:40px">
+  <div class="qtop"><button id="qx" style="font-size:20px;width:28px" aria-label="close">✕</button><div class="road" id="road"><div class="fill" id="rfill"></div><div class="dash" id="rdash"></div></div><div class="chip" id="qchip"><i></i><span id="qiq">0,0</span></div></div>
+  <div class="qmeta"><div class="qnum mono" id="qnum"></div><div class="combo" id="combo"></div></div>
+  <div id="qwrap"></div></div>
+  <div class="sheet" id="sheet"><div class="sscroll"><div class="h" id="sTitle"></div><div class="attn" id="sAttn"><div class="lbl" data-i="attn" style="color:#8b8b86"></div><div class="attnk" id="sKey"></div><div class="attnn" id="sNote"></div></div><div class="rule" id="srule"></div><details class="off"><summary data-i="official"></summary><div id="sOff"></div></details></div><button class="btn" id="snext"><span data-i="next"></span> →</button></div>
+ </section>
+
+ <!-- session done -->
+ <section class="view" id="done"><div class="pad" style="text-align:center;padding-top:140px">
+  <div class="blob" style="left:50%;top:250px;margin-left:-150px"></div>
+  <div class="lbl" style="position:relative" data-i="finished"></div>
+  <div style="position:relative;font:800 54px/1 IT;letter-spacing:-.05em;margin-top:18px;white-space:nowrap"><span id="dfrom">0,0</span> <span style="color:var(--mut);font-weight:500">→</span> <span id="dto">0,0</span></div>
+  <div class="mono" style="position:relative;margin-top:16px;font-size:13px;font-weight:700" id="dsub"></div>
+  <div class="donebtns"><button class="cta ghost" id="dwords" data-i="words5"></button><button class="cta" id="dhome" data-i="home"></button></div></div></section>
+
+ <!-- mock exam -->
+ <section class="view" id="exam"><div class="pad" id="epad" style="padding-bottom:40px"></div></section>
+
+ <!-- cards -->
+ <section class="view" id="cards"><div class="pad">
+  <div class="lbl" data-i="cards_l"></div><div class="h1" data-i="cards_t"></div><div class="seg2" id="cseg"><button data-m="rules" class="on" data-i="rules_seg"></button><button data-m="words" data-i="words_seg"></button><i></i></div>
+  <div class="deck" id="deck"></div>
+  <div class="deckhint"><span>← <span data-i="again"></span></span><span id="dcount"></span><span><span data-i="know"></span> →</span></div></div></section>
+
+ <!-- dictionary -->
+ <section class="view" id="dict"><div class="pad">
+  <div class="lbl" data-i="dict_sub"></div><div class="h1" data-i="t_dict"></div><p class="dhint" data-i="tap_hint"></p>
+  <div class="search"><span style="color:var(--mut)">⌕</span><input id="dq" autocomplete="off"></div>
+  <div class="cats" id="cats"></div>
+  <div class="terms" id="terms"></div></div></section>
+
+ <div class="bfade hide" id="bfade"></div>
+ <button class="gofab" id="start"><span data-i="go"></span><b>→</b></button>
+ <nav class="tabbar hide" id="tabs"><div class="ind" id="ind"></div><button data-tab="home" class="on" data-al="t_home"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 17.5a8.5 8.5 0 1 1 15 0"/><path d="M12 13.2l3.6-3.8"/><circle cx="12" cy="13.6" r="1.3" fill="currentColor" stroke="none"/></svg></button><button data-tab="topics" data-al="t_topics"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="9" rx="2"/><rect x="13" y="4" width="7" height="5" rx="2"/><rect x="13" y="11" width="7" height="9" rx="2"/><rect x="4" y="15" width="7" height="5" rx="2"/></svg></button><button data-tab="cards" data-al="t_cards"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="4" width="11" height="14.5" rx="2.4" transform="rotate(8 13 11)"/><path d="M5.6 7.2l-.4 10.6a2.2 2.2 0 0 0 2.1 2.3l7 .4"/></svg></button><button data-tab="dict" data-al="t_dict"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h7"/><path d="M7.5 5v1.5c0 3-1.5 5.5-3.5 7"/><path d="M5.5 10c1 1.8 2.6 3.2 4.5 4"/><path d="M12.5 19l3.75-9 3.75 9"/><path d="M13.9 15.8h4.7"/></svg></button></nav>
+ <div class="scrim" id="scrim"></div>
+ <div class="sheet2" id="psheet"></div>
+ <div class="toast" id="toast"></div>
+ <div class="boot" id="boot"><div class="bootdot"></div></div>
+</div>
+<script src="js/i18n.js"></script>
+<script src="js/store.js"></script>
+<script src="js/boot.js"></script>
+<script type="module" src="js/scene.js"></script>
+<script type="module" src="js/situation.js"></script>
+</body>
+</html>
