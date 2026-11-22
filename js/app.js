@@ -277,6 +277,7 @@ function resolveSk(x) {
   const ph = PHR.find(p => p[1].toLowerCase() === k); if (ph) return { sk: ph[1], tr: L === 'en' ? ph[3] : ph[2] };
   return null;
 }
+const steps = h => h.replace(/(^|[\s.:])(\d)\)\s/g, (m, pre, n) => (pre.trim() ? pre : '') + `<br><b class="stepn">${n}</b> `);
 const chips = txt => txt.replace(/\[\[(.+?)\]\]/g, (_, x) => /^\d/.test(x) ? esc(x) : resolveSk(x) ? `<span class="chipk tw" data-sk="${esc(x)}">${esc(x)}</span>` : `<span class="skx">${esc(x)}</span>`);
 function entryFor(el) {
   const sk = el.dataset.sk, w = el.dataset.w;
@@ -320,7 +321,7 @@ function fillSheet(q) {
   $('#sAttn').style.display = '';
   $('#sTitle').textContent = x.t;
   $('#sKey').innerHTML = resolveSk(x.k) ? `<span class="chipk tw big" data-sk="${esc(x.k)}">${esc(x.k)}</span>` : `<span class="chipk big">${esc(x.k)}</span>`;
-  $('#sNote').innerHTML = chips(x.n); $('#srule').innerHTML = chips(x.x); $('#sOff').innerHTML = `${esc(q.q)} <b>${esc(q.a)}</b>`;
+  $('#sNote').innerHTML = chips(x.n); $('#srule').innerHTML = steps(chips(x.x)); $('#sOff').innerHTML = `${esc(q.q)} <b>${esc(q.a)}</b>`;
   $('.sheet details').open = false; $('.sheet details').style.display = L === 'sk' ? 'none' : 'block';
 }
 
@@ -399,7 +400,7 @@ const TRQ = id => L === 'sk' ? null : ((DATA.tr || {})[id] || {})[L === 'en' ? '
 function explHTML(q) {
   const X = EXPL[q.id], x = X && X[L === 'sk' ? 'sk' : L === 'en' ? 'en' : 'ua']; if (!x) return '';
   const key = resolveSk(x.k) ? `<span class="chipk tw" data-sk="${esc(x.k)}">${esc(x.k)}</span>` : `<span class="chipk">${esc(x.k)}</span>`;
-  return `<div class="lexpl"><div class="lxh">${esc(x.t)}</div><div class="lxattn"><span class="lbl">${t('attn')}</span> ${key}<div>${chips(x.n)}</div></div><div class="lxrule">${chips(x.x)}</div></div>`;
+  return `<div class="lexpl"><div class="lxh">${esc(x.t)}</div><div class="lxattn"><span class="lbl">${t('attn')}</span> ${key}<div>${chips(x.n)}</div></div><div class="lxrule">${steps(chips(x.x))}</div></div>`;
 }
 function renderLearn(q, first) {
   SS.learnN = (SS.learnN || 0) + 1; headNum(t('learn_new').toUpperCase(), SS.learnN, SS.learnTotal);
