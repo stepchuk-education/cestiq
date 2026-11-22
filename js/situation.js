@@ -58,8 +58,9 @@ function pathFor(v) {
   const r = [-h[1], h[0]];                                               // right-hand side of the heading
   const exitArm = v.move === 'left' ? LEFT_OF[v.from] : v.move === 'right' ? RIGHT_OF[v.from] : v.move === 'u' ? v.from : OPP[v.from];
   const e = ARM[exitArm]; const re = [-e[1], e[0]];
-  const start = [a[0] * (v.wait ? EDGE + 1.2 : IN0) + r[0] * LANE, a[1] * (v.wait ? EDGE + 1.2 : IN0) + r[1] * LANE];
-  const entry = [a[0] * EDGE + r[0] * LANE, a[1] * EDGE + r[1] * LANE];
+  const ln = v.lane ?? LANE, d0 = (v.wait ? EDGE + 1.2 : IN0) + (v.back || 0);
+  const start = [a[0] * d0 + r[0] * ln, a[1] * d0 + r[1] * ln];
+  const entry = [a[0] * (EDGE + (v.back || 0) * 0) + r[0] * ln, a[1] * EDGE + r[1] * ln];
   const exitS = [e[0] * EDGE + re[0] * LANE, e[1] * EDGE + re[1] * LANE];
   const end = [e[0] * OUT1 + re[0] * LANE, e[1] * OUT1 + re[1] * LANE];
   let mids = [];
@@ -73,6 +74,10 @@ function pathFor(v) {
 }
 function normalize(def) {
   if (def.cars) return def;                                              // hand-made legacy definition
+  // several vehicles on one arm: a tram keeps the inner track, others take the outer side; otherwise they queue
+  const byArm = {}; def.vehicles.forEach(v => (byArm[v.from] = byArm[v.from] || []).push(v));
+  Object.values(byArm).forEach(g => { if (g.length < 2) return; const tram = g.some(v => v.kind === 'tram');
+    g.forEach((v, i) => { if (tram) v.lane = v.kind === 'tram' ? 0.55 : 2.6; else v.back = i * 6.5; }); });
   return Object.assign({ accent: '#FF7A1A' }, def, {
     cars: def.vehicles.map(v => ({ id: v.id, you: !!v.you, kind: v.kind || 'car', color: colorOf(v.you ? 'you' : (v.color || (v.kind === 'tram' ? 'tram' : 'grey'))), path: pathFor(v) })),
   });
