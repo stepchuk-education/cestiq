@@ -338,7 +338,17 @@ function animateMedia(first) {
 
 /* ---------- SESSIONS (daily route, topic, practice) ---------- */
 let SS = null, sitH = null, streakN = 0, dashPos = 0, lastAnsT = 0;
-const optionsFor = q => { const w = q.d.h.length >= 2 ? shuffle(q.d.h.slice(0, 3)).slice(0, 2) : q.d.h.slice(0, 1); return shuffle([q.a, ...w]); };
+// wrong options that are near-copies of the answer (same words, other order/grammar) are not fair distractors
+const toks = x => (String(x).toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').match(/[\p{L}\p{N}]+/gu) || []).filter(w => w.length >= 3 || /\d/.test(w));
+const tooClose = (a, b) => {   // same words, only order/grammar/punctuation differ (order matters when the answer is a numbered sequence)
+  const A = toks(a), B = toks(b); if (A.join(' ') === B.join(' ')) return true;
+  if (/\d/.test(a) || A.length !== B.length) return false; const S = new Set(B); return A.every(w => S.has(w));
+};
+const optionsFor = q => {
+  const pool = [...q.d.h, ...(q.d.e || [])].filter((w, i, arr) => arr.indexOf(w) === i && !tooClose(w, q.a));
+  const hard = pool.filter(w => q.d.h.includes(w)), w = (hard.length >= 2 ? shuffle(hard.slice(0, 3)) : [...hard, ...pool.filter(x => !hard.includes(x))]).slice(0, 2);
+  return shuffle([q.a, ...w]);
+};
 function buildSteps(neu, rev) {
   const steps = [], rq = [...rev];
   for (let i = 0; i < neu.length; i += 4) {
