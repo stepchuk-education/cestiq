@@ -508,10 +508,10 @@ function runExam() {
 function renderExamQ() {
   const it = EX.items[EX.i], q = it.q, n = EX.items.length;
   $('#epad').innerHTML = `<div class="qtop"><button class="exx" style="font-size:20px;width:28px">✕</button><span class="chip" id="etm">30:00</span><div style="flex:1"></div><button class="chip egrid">${EX.i + 1}/${n}</button></div>
-   <div class="qcard" style="margin-top:16px">${mediaHTML(q, false)}<div class="lbl qlbl" style="margin-bottom:10px"><span>${esc(nameOf(SEC[q.s]))} · ${it.pts} b</span>${hintUI(q)}</div><div class="qtext in">${hlText(q.q)}</div>${hintBox(q)}</div>
+   <div class="qcard" style="margin-top:16px">${mediaHTML(q, false)}<div class="lbl" style="margin-bottom:10px">${esc(nameOf(SEC[q.s]))} · ${it.pts} b</div><div class="qtext in">${hlText(q.q)}</div></div>
    <div class="opts">${it.opts.map((o, j) => `<button class="opt ${it.ans === j ? 'sel' : ''}" data-j="${j}"><span class="k">${'ABC'[j]}</span><span class="t">${esc(o)}</span></button>`).join('')}</div>
    <div class="duo2" style="margin-top:16px"><button class="cta ghost" id="eprev" ${EX.i ? '' : 'disabled'}>${t('back')}</button>${EX.i < n - 1 ? `<button class="cta" id="enext">${t('next')}<b>→</b></button>` : `<button class="cta" id="esub">${t('exam_submit')}<b>✓</b></button>`}</div>`;
-  $('#epad').scrollTop = 0; wireHint($('#epad'));
+  $('#epad').scrollTop = 0;   // mock exam stays honest: no hints
   $$('#epad .opt').forEach(b => b.onclick = e => { if (e.target.closest('.tw')) return; it.ans = +b.dataset.j; $$('#epad .opt').forEach(x => x.classList.toggle('sel', x === b)); vib(8); if (EX.i < n - 1) setTimeout(() => { EX.i++; renderExamQ(); }, 260); });
   $('#eprev').onclick = () => { EX.i--; renderExamQ(); };
   const nx = $('#enext'); if (nx) nx.onclick = () => { EX.i++; renderExamQ(); };
