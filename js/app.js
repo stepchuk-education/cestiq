@@ -249,7 +249,7 @@ function openSection(tile) {
 }
 
 /* ---------- glossary, lexicon, word popover ---------- */
-const GL = DATA.gloss, LEX = DATA.lex, PHR = DATA.phrases, EXPL = DATA.expl, CHIP = DATA.chip || {}, SITS = DATA.sits || {};
+const GL = DATA.gloss, LEX = DATA.lex, PHR = DATA.phrases, EXPL = DATA.expl, CHIP = DATA.chip || {}, SITS = DATA.sit2d || {};   // scenes = the official picture, restyled, with vehicles driving along their arrows
 const rxSrc = g => g.re.replace(/\((?!\?)/g, '(?:');
 const GLI = GL.map(g => ({ ...g, rx: new RegExp('^(?:' + rxSrc(g) + ')', 'iu') })).sort((a, b) => b.re.length - a.re.length);
 const GENERIC = new Set(['cest', 'jazd', 'vozidl', 'vodič', 'smie|smú', 'nesmie|nesmú', 'povinn', 'premávk', 'motorov', 'rýchlos', 'značk', 'vpravo|vľavo', 'svetel', 'jazdn(ý|ého|om|ých|é) pruh|pruh']);
@@ -327,7 +327,7 @@ function fillSheet(q) {
 
 /* ---------- media of a question ---------- */
 function mediaHTML(q, live) {
-  if (SITS[q.id] && live) return `<div class="sitwrap"><div class="sit" id="sit"></div>${q.img ? `<img src="${q.img}" class="qimg sitorig" id="sitorig" alt="">` : ''}<div class="sitbar">${q.img ? `<button class="trchip" id="sitOrigBtn">${t('orig')}</button>` : ''}<button class="trchip" id="sitReplay" style="display:none">↻ ${t('replay')}</button></div></div>`;
+  if (SITS[q.id] && live) return `<div class="sitwrap"><div class="sit2" id="sit"></div>${q.img ? `<img src="${q.img}" class="qimg sitorig" id="sitorig" alt="">` : ''}<div class="sitbar">${q.img ? `<button class="trchip" id="sitOrigBtn">${t('orig')}</button>` : ''}<button class="trchip" id="sitReplay" style="display:none">↻ ${t('replay')}</button></div></div>`;
   if (q.sign) return `<div class="sign3d" id="qsign"><img class="b" src="${q.sign}" alt=""><img class="f" src="${q.sign}" alt=""></div>`;
   if (q.img) return `<img src="${q.img}" id="qimg" class="qimg" alt="">`;
   return '';
@@ -335,7 +335,7 @@ function mediaHTML(q, live) {
 function wireSit(q, h) {
   const ob = $('#sitOrigBtn'), rp = $('#sitReplay');
   if (ob) ob.onclick = e => { e.stopPropagation(); vib(5); const on = $('#sitorig').classList.toggle('on'); ob.classList.toggle('on', on); ob.textContent = on ? t('scene') : t('orig'); };
-  if (rp) rp.onclick = e => { e.stopPropagation(); vib(5); rp.style.display = 'none'; const def = SITS[q.id]; sitH && sitH.destroy(); sitH = SIT.mount($('#sit'), def); setTimeout(() => sitH.play(def.order).then(() => rp.style.display = ''), 300); };
+  if (rp) rp.onclick = e => { e.stopPropagation(); vib(5); rp.style.display = 'none'; const def = SITS[q.id]; sitH && sitH.destroy(); sitH = SIT2.mount($('#sit'), def); setTimeout(() => sitH.play(def.order).then(() => rp.style.display = ''), 300); };
 }
 function animateMedia(first) {
   const sg = $('#qsign'); if (sg) sg.animate([{ transform: 'perspective(700px) rotateX(0) rotateY(0) scale(.85)', opacity: 0 }, { transform: 'perspective(700px) rotateX(16deg) rotateY(-10deg) scale(1.03)', opacity: 1, offset: .6 }, { transform: 'perspective(700px) rotateX(10deg) rotateY(-6deg)', opacity: 1 }], { duration: 900, delay: 100, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' });
@@ -415,7 +415,7 @@ function explHTML(q) {
 function renderLearn(q, first) {
   SS.learnN = (SS.learnN || 0) + 1; headNum(t('learn_new').toUpperCase(), SS.learnN, SS.learnTotal);
   const tr = TRQ(q.id);
-  $('#qwrap').innerHTML = `<div class="qcard learncard" id="qc" style="${first ? '' : 'transform:translateX(60px);opacity:0'}">${mediaHTML(q, !!(SITS[q.id] && window.SIT))}<div class="lbl" style="margin-bottom:10px">${esc(nameOf(TOP[q.t]))}</div>
+  $('#qwrap').innerHTML = `<div class="qcard learncard" id="qc" style="${first ? '' : 'transform:translateX(60px);opacity:0'}">${mediaHTML(q, !!(SITS[q.id] && window.SIT2))}<div class="lbl" style="margin-bottom:10px">${esc(nameOf(TOP[q.t]))}</div>
     <div class="qtext" id="qt">${hlText(q.q)}</div><div class="learnans qtext in">→ ${hlText(q.a)}</div>
     ${tr ? `<div class="trbox" id="trbox"><div class="lbl">${t('tr_l')} · № ${q.id}</div><p>${esc(tr[0])} <b>${esc(tr[1])}</b></p></div>` : ''}
     ${explHTML(q)}
@@ -423,7 +423,7 @@ function renderLearn(q, first) {
     <div class="learnbtns">${tr ? `<button class="cta ghost" id="trbtn">${t('tr_btn')}</button>` : ''}<button class="cta" id="gotit">${t('got_it')}<b>→</b></button></div>`;
   $('#qpad').scrollTop = 0;
   requestAnimationFrame(() => requestAnimationFrame(() => { const qc = $('#qc'); qc.style.transform = ''; qc.style.opacity = 1; animateMedia(first); $$('#qt .w').forEach((w, i) => w.style.transitionDelay = 150 + i * 18 + 'ms'); $('#qt').classList.add('in');
-    if (SITS[q.id] && window.SIT && $('#sit')) { const def = SITS[q.id]; sitH = SIT.mount($('#sit'), def); wireSit(q, sitH); setTimeout(() => sitH && sitH.play(def.order).then(() => { const rp = $('#sitReplay'); if (rp) rp.style.display = ''; }), 1400); } }));
+    if (SITS[q.id] && window.SIT2 && $('#sit')) { const def = SITS[q.id]; sitH = SIT2.mount($('#sit'), def); wireSit(q, sitH); setTimeout(() => sitH && sitH.play(def.order).then(() => { const rp = $('#sitReplay'); if (rp) rp.style.display = ''; }), 1400); } }));
   const tb = $('#trbtn'); if (tb) tb.onclick = () => { vib(6); const box = $('#trbox'); const on = box.classList.toggle('on'); tb.classList.toggle('on', on); tb.textContent = on ? t('tr_hide') : t('tr_btn'); if (on) setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80); };
   $('#gotit').onclick = () => { vib(8); ST.addTime((Date.now() - lastAnsT) / 1000); lastAnsT = Date.now(); leaveCard(() => { SS.i++; nextStep(false); }); };
 }
@@ -440,7 +440,7 @@ function renderQ(q, src, first) {
   $('#qpad').scrollTop = 0;
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const qc = $('#qc'); qc.style.transform = ''; qc.style.opacity = 1;
-    if (SITS[q.id] && window.SIT) { sitH = SIT.mount($('#sit'), SITS[q.id]); wireSit(q, sitH); $('#sit').animate([{ opacity: 0, transform: 'scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 600, easing: 'cubic-bezier(.2,.8,.2,1)' }); }
+    if (SITS[q.id] && window.SIT2) { sitH = SIT2.mount($('#sit'), SITS[q.id]); wireSit(q, sitH); $('#sit').animate([{ opacity: 0, transform: 'scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 600, easing: 'cubic-bezier(.2,.8,.2,1)' }); }
     animateMedia(first);
     $$('#qt .w').forEach((w, i) => w.style.transitionDelay = (first ? 150 : 250) + i * 22 + 'ms'); $('#qt').classList.add('in');
     const n = $$('#qt .w').length; $$('.opt').forEach((o, i) => { o.style.transition = 'opacity .45s,transform .6s cubic-bezier(.2,.9,.3,1)'; o.style.transitionDelay = (300 + n * 22 + i * 80) + 'ms'; o.style.opacity = 1; o.style.transform = ''; });

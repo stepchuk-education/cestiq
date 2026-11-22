@@ -177,3 +177,18 @@ html,body{height:100%;margin:0}
 .sitbar{position:absolute;right:8px;bottom:8px;display:flex;gap:6px;z-index:2}
 .sitbar .trchip{background:rgba(255,255,255,.85);backdrop-filter:blur(6px)}
 .sitbar .trchip.on{background:var(--ink);color:#fff}
+/* 2D scenes from the official picture */
+.sit2{border-radius:20px;overflow:hidden;background:#fff;box-shadow:0 18px 36px -22px rgba(0,0,0,.45)}
+.s2box{position:relative;width:100%;overflow:hidden}
+.s2box>img.s2full,.s2box>img.s2bg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.s2box>img.s2bg{opacity:0}
+.s2box.cut>img.s2bg{opacity:1}.s2box.cut>img.s2full{opacity:0}
+.s2car{position:absolute;opacity:0;transform-origin:50% 60%;will-change:transform,opacity;pointer-events:none}
+.s2box.cut .s2car{opacity:1}
+.s2you{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:var(--a);box-shadow:0 0 0 4px rgba(255,255,255,.8),0 0 22px 6px var(--a);opacity:0;pointer-events:none}
+.s2box.cut .s2you{opacity:1}
+.s2you.go::after{content:attr(data-n);position:absolute;inset:0;display:grid;place-items:center;font:800 12px JB;color:#141414}
+.s2badge{position:absolute;width:26px;height:26px;border-radius:50%;background:#141414;color:#fff;font:800 13px JB;display:grid;place-items:center;box-shadow:0 0 0 3px var(--a);pointer-events:none;z-index:3}
+.s2stop{position:absolute;width:24px;height:24px;margin:-26px 0 0 -12px;border-radius:50%;background:#E0453A;box-shadow:0 0 0 3px #fff;z-index:3}
+.s2stop::after{content:'';position:absolute;left:5px;right:5px;top:10px;height:4px;background:#fff;border-radius:2px}
+.sitwrap .sitorig{border-radius:20px;background:#fff}
