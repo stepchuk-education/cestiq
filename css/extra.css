@@ -170,3 +170,10 @@ html,body{height:100%;margin:0}
 .hintchip.on{background:var(--a);color:#141414}
 .hintbox{display:none;margin-top:12px;padding:10px 13px;border-radius:14px;font:650 15px/1.4 IT;color:#2a2a28;background:color-mix(in srgb,var(--a) 14%,#fff);box-shadow:0 0 22px -12px var(--glow)}
 .hintbox.on{display:block;animation:trin .35s cubic-bezier(.2,.8,.2,1)}
+.sitwrap{position:relative;margin-bottom:14px}
+.sitwrap .sit{margin-bottom:0}
+.sitorig{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;margin:0;opacity:0;pointer-events:none;transition:opacity .3s}
+.sitorig.on{opacity:1;pointer-events:auto}
+.sitbar{position:absolute;right:8px;bottom:8px;display:flex;gap:6px;z-index:2}
+.sitbar .trchip{background:rgba(255,255,255,.85);backdrop-filter:blur(6px)}
+.sitbar .trchip.on{background:var(--ink);color:#fff}

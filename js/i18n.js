@@ -84,3 +84,6 @@ Object.assign(window.S.en, { tr_btn: "I don't understand · translate" });
 Object.assign(window.S.ua, { hint: 'Підказка' });
 Object.assign(window.S.en, { hint: 'Hint' });
 Object.assign(window.S.sk, { hint: 'Nápoveda' });
+Object.assign(window.S.ua, { orig: 'Оригінал', scene: 'Схема', replay: 'Ще раз' });
+Object.assign(window.S.en, { orig: 'Original', scene: 'Scene', replay: 'Replay' });
+Object.assign(window.S.sk, { orig: 'Originál', scene: 'Schéma', replay: 'Znova' });
