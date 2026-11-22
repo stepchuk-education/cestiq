@@ -41,6 +41,7 @@ function signSprite(type) {
   if (type === 'yield') { g.fillStyle = '#fff'; g.strokeStyle = '#D63A2F'; g.lineWidth = 14; g.beginPath(); g.moveTo(14, 22); g.lineTo(114, 22); g.lineTo(64, 112); g.closePath(); g.fill(); g.stroke(); }
   else if (type === 'stop') { g.fillStyle = '#D63A2F'; g.beginPath(); for (let i = 0; i < 8; i++) { const a = Math.PI / 8 + i * Math.PI / 4; g.lineTo(64 + 56 * Math.cos(a), 64 + 56 * Math.sin(a)); } g.closePath(); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 5; g.stroke(); g.fillStyle = '#fff'; g.font = '800 34px Inter Tight, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('STOP', 64, 66); }
   else if (type === 'main') { g.translate(64, 64); g.rotate(Math.PI / 4); g.fillStyle = '#fff'; g.fillRect(-42, -42, 84, 84); g.fillStyle = '#F2C230'; g.fillRect(-32, -32, 64, 64); g.strokeStyle = '#333'; g.lineWidth = 2; g.strokeRect(-42, -42, 84, 84); }
+  else if (type === 'round') { g.fillStyle = '#2C5BB8'; g.beginPath(); g.arc(64, 64, 56, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 9; for (let i = 0; i < 3; i++) { const a0 = i * 2 * Math.PI / 3; g.beginPath(); g.arc(64, 64, 28, a0 + 0.35, a0 + 1.75); g.stroke(); const ax = 64 + 28 * Math.cos(a0 + 1.75), ay = 64 + 28 * Math.sin(a0 + 1.75); g.fillStyle = '#fff'; g.beginPath(); g.arc(ax, ay, 8, 0, Math.PI * 2); g.fill(); } }
   else if (type === 'light') { g.fillStyle = '#222'; g.fillRect(40, 8, 48, 112); ['#D63A2F', '#E8B72F', '#2FA36B'].forEach((col, i) => { g.fillStyle = col; g.beginPath(); g.arc(64, 30 + i * 34, 13, 0, Math.PI * 2); g.fill(); }); }
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, toneMapped: false }));
@@ -72,14 +73,33 @@ function pathFor(v) {
   }
   return [start, entry, ...mids, exitS, end];
 }
+// ---------- roundabout: ring around the centre, traffic counter-clockwise (right-hand traffic) ----------
+const RB = { island: 4.0, inner: 4.3, outer: 8.4, lane: 6.3 };
+const ANG = { E: 0, S: Math.PI / 2, W: Math.PI, N: -Math.PI / 2 };
+const onRing = (t, r = RB.lane) => [Math.cos(t) * r, Math.sin(t) * r];
+function ringPath(v) {
+  const pts = []; let t0, t1;
+  if (v.ring) { t0 = ANG[v.ring]; }
+  else {   // approach on the right-hand lane of the arm, then merge to the right onto the ring
+    const a = ARM[v.from], h = [-a[0], -a[1]], r = [-h[1], h[0]];
+    for (const d of [11.2, 10, 8.9]) pts.push([a[0] * d + r[0] * LANE, a[1] * d + r[1] * LANE]);
+    t0 = ANG[v.from] - 0.42;
+  }
+  t1 = ANG[v.exit] + 0.42; while (t1 > t0 - 0.2) t1 -= 2 * Math.PI;
+  const n = Math.max(4, Math.ceil((t0 - t1) / 0.3));
+  for (let i = 0; i <= n; i++) pts.push(onRing(t0 + (t1 - t0) * i / n));
+  const e = ARM[v.exit], re = [-e[1], e[0]];
+  for (const d of [8.9, 10.5, 14]) pts.push([e[0] * d + re[0] * LANE, e[1] * d + re[1] * LANE]);
+  return pts;
+}
 function normalize(def) {
   if (def.cars) return def;                                              // hand-made legacy definition
   // several vehicles on one arm: a tram keeps the inner track, others take the outer side; otherwise they queue
   const byArm = {}; def.vehicles.forEach(v => (byArm[v.from] = byArm[v.from] || []).push(v));
-  Object.values(byArm).forEach(g => { if (g.length < 2) return; const tram = g.some(v => v.kind === 'tram');
+  if (def.layout !== 'roundabout') Object.values(byArm).forEach(g => { if (g.length < 2) return; const tram = g.some(v => v.kind === 'tram');
     g.forEach((v, i) => { if (tram) v.lane = v.kind === 'tram' ? 0.55 : 2.6; else v.back = i * 6.5; }); });
   return Object.assign({ accent: '#FF7A1A' }, def, {
-    cars: def.vehicles.map(v => ({ id: v.id, you: !!v.you, kind: v.kind || 'car', color: colorOf(v.you ? 'you' : (v.color || (v.kind === 'tram' ? 'tram' : 'grey'))), path: pathFor(v) })),
+    cars: def.vehicles.map(v => ({ id: v.id, you: !!v.you, kind: v.kind || 'car', color: colorOf(v.you ? 'you' : (v.color || (v.kind === 'tram' ? 'tram' : 'grey'))), path: def.layout === 'roundabout' ? ringPath(v) : pathFor(v) })),
   });
 }
 
@@ -133,7 +153,7 @@ function mount(el, def0) {
   const scene = new THREE.Scene(); scene.background = new THREE.Color(BG);
   const aspect = W / H, fh = 21, fw = Math.max(fh * aspect, 22);
   const cam = new THREE.OrthographicCamera(-fw / 2, fw / 2, fh / 2, -fh / 2, 0.1, 200);
-  cam.position.set(0, 30, 15); cam.lookAt(0, 0, 0);
+  const cz = def.layout === 'roundabout' ? 2.2 : 0; cam.position.set(0, 30, 15 + cz); cam.lookAt(0, 0, cz);
   scene.add(new THREE.HemisphereLight('#ffffff', '#cfc9c2', 1.35));
   const sun = new THREE.DirectionalLight('#fff6ec', 2.6); sun.position.set(-16, 14, -6); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, near: 1, far: 80 }); sun.shadow.radius = 5; sun.shadow.bias = -0.0004;
@@ -147,22 +167,29 @@ function mount(el, def0) {
   const mainM = new THREE.MeshStandardMaterial({ color: '#BDB9B4', roughness: 0.95 });
   const main = def.main || [];
   const plane = (w, d, x, z, m, y = 0.01) => { const r = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m); r.rotation.x = -Math.PI / 2; r.position.set(x, y, z); r.receiveShadow = true; scene.add(r); return r; };
-  plane(RW, RW, 0, 0, main.length ? mainM : roadM);
-  for (const k of arms) { const [ax, az] = ARM[k], L = 40, c = RW / 2 + L / 2; plane(ax ? L : RW, ax ? RW : L, ax * c, az * c, main.includes(k) ? mainM : roadM); }
+  const isRB = def.layout === 'roundabout';
+  if (isRB) {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(RB.inner - 0.3, RB.outer, 96), roadM); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.012; ring.receiveShadow = true; scene.add(ring);
+    const islandM = new THREE.MeshStandardMaterial({ color: '#B9C79A', roughness: 1 });
+    const island = new THREE.Mesh(new THREE.CylinderGeometry(RB.island, RB.island, 0.25, 72), islandM); island.position.y = 0.12; island.receiveShadow = true; island.castShadow = true; scene.add(island);
+    const curb = new THREE.Mesh(new THREE.RingGeometry(RB.island, RB.island + 0.28, 72), new THREE.MeshStandardMaterial({ color: '#F4F2EE' })); curb.rotation.x = -Math.PI / 2; curb.position.y = 0.03; scene.add(curb);
+    const edge = new THREE.Mesh(new THREE.RingGeometry(RB.outer - 0.12, RB.outer, 96), new THREE.MeshBasicMaterial({ color: '#F7F6F3' })); edge.rotation.x = -Math.PI / 2; edge.position.y = 0.02; scene.add(edge);
+  } else plane(RW, RW, 0, 0, main.length ? mainM : roadM);
+  for (const k of arms) { const [ax, az] = ARM[k], L = 40, c = (isRB ? RB.outer - 0.6 : RW / 2) + L / 2; plane(ax ? L : RW, ax ? RW : L, ax * c, az * c, main.includes(k) ? mainM : roadM); }
   const lineM = new THREE.MeshBasicMaterial({ color: '#F7F6F3' });
   const addLine = (x, z, w, d) => { const l = new THREE.Mesh(new THREE.PlaneGeometry(w, d), lineM); l.rotation.x = -Math.PI / 2; l.position.set(x, 0.02, z); scene.add(l); };
   for (const k of arms) {
     const [ax, az] = ARM[k];
-    for (let i = 0; i < 6; i++) { const d = RW / 2 + 1.5 + i * 3; ax ? addLine(ax * d, 0, 1.6, 0.14) : addLine(0, az * d, 0.14, 1.6); }
+    for (let i = 0; i < 6; i++) { const d = (isRB ? RB.outer + 0.5 : RW / 2) + 1.5 + i * 3; ax ? addLine(ax * d, 0, 1.6, 0.14) : addLine(0, az * d, 0.14, 1.6); }
     ax ? (addLine(ax * (RW / 2 + 20), RW / 2, 40, 0.12), addLine(ax * (RW / 2 + 20), -RW / 2, 40, 0.12)) : (addLine(RW / 2, az * (RW / 2 + 20), 0.12, 40), addLine(-RW / 2, az * (RW / 2 + 20), 0.12, 40));
-    if (!main.includes(k) && main.length) {   // give-way line across the minor arm
-      for (let i = -1; i <= 1; i += 0.5) ax ? addLine(ax * (RW / 2 + 0.4), i * 1.2 + (az || 0), 0.5, 0.35) : addLine(i * 1.2, az * (RW / 2 + 0.4), 0.35, 0.5);
+    if ((!main.includes(k) && main.length) || (isRB && (def.signs || {})[k])) {   // give-way line across the minor arm
+      for (let i = -1; i <= 1; i += 0.5) { const g0 = isRB ? RB.outer + 0.3 : RW / 2 + 0.4; ax ? addLine(ax * g0, i * 1.2 + (az || 0), 0.5, 0.35) : addLine(i * 1.2, az * g0, 0.35, 0.5); }
     }
   }
-  if (!arms.includes('N')) addLine(0, -RW / 2, RW + 0.1, 0.12);
-  if (!arms.includes('S')) addLine(0, RW / 2, RW + 0.1, 0.12);
-  if (!arms.includes('E')) addLine(RW / 2, 0, 0.12, RW + 0.1);
-  if (!arms.includes('W')) addLine(-RW / 2, 0, 0.12, RW + 0.1);
+  if (!isRB && !arms.includes('N')) addLine(0, -RW / 2, RW + 0.1, 0.12);
+  if (!isRB && !arms.includes('S')) addLine(0, RW / 2, RW + 0.1, 0.12);
+  if (!isRB && !arms.includes('E')) addLine(RW / 2, 0, 0.12, RW + 0.1);
+  if (!isRB && !arms.includes('W')) addLine(-RW / 2, 0, 0.12, RW + 0.1);
   // tram rails along each tram path
   const railM = new THREE.MeshBasicMaterial({ color: '#8E8A85', transparent: true, opacity: 0.75, depthWrite: false });
   (def.cars || []).filter(c => c.kind === 'tram').forEach(c => {
@@ -179,11 +206,13 @@ function mount(el, def0) {
     }
   });
   // signs at the approaches (right-hand side of the incoming lane)
-  for (const [k, type] of Object.entries(def.signs || {})) {
+  for (const [k, types] of Object.entries(def.signs || {})) {
     if (!ARM[k]) continue; const [ax, az] = ARM[k]; const h = [-ax, -az], r = [-h[1], h[0]];
-    const x = ax * (RW / 2 + 1.6) + r[0] * (RW / 2 + 1.1), z = az * (RW / 2 + 1.6) + r[1] * (RW / 2 + 1.1);
+    const d0 = isRB ? RB.outer + 1.2 : RW / 2 + 1.6;
+    const x = ax * d0 + r[0] * (RW / 2 + 1.1), z = az * d0 + r[1] * (RW / 2 + 1.1);
+    const list = Array.isArray(types) ? types : [types];
+    list.forEach((type, li) => { const sp = signSprite(type); sp.position.set(x + ax * li * 2.4 + r[0] * li * 0.9, 2.9, z + az * li * 2.4 + r[1] * li * 0.9); scene.add(sp); });
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.2, 8), new THREE.MeshStandardMaterial({ color: '#7d7b78' })); post.position.set(x, 1.1, z); post.castShadow = true; scene.add(post);
-    const sp = signSprite(type); sp.position.set(x, 2.9, z); scene.add(sp);
   }
   // cars, arrows, "you" ring
   const items = def.cars.map(c => {
