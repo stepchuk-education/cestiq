@@ -81,3 +81,6 @@ Object.assign(window.S.en, { tr_btn: 'Unclear · translate', tr_hide: 'Hide tran
 Object.assign(window.S.sk, { tr_btn: 'Preklad', tr_hide: 'Skryť', tr_l: 'Preklad', tr_short: 'Preklad' });
 Object.assign(window.S.ua, { tr_btn: 'Не розумію · переклад питання' });
 Object.assign(window.S.en, { tr_btn: "I don't understand · translate" });
+Object.assign(window.S.ua, { hint: 'Підказка' });
+Object.assign(window.S.en, { hint: 'Hint' });
+Object.assign(window.S.sk, { hint: 'Nápoveda' });

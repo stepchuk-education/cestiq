@@ -396,6 +396,11 @@ function headNum(label, n, total) {
   $('#qnum').innerHTML = `<span style="margin-right:6px;font-family:JB">${label}</span><div class="qnum" id="qd" style="display:flex"></div><span style="margin-left:4px;color:var(--mut)">/ ${String(total).padStart(2, '0')}</span>`;
   rollDigits($('#qd'), String(Math.min(total, n)).padStart(2, '0'), 15);
 }
+const HINT = id => ((DATA.hint || {})[id] || {})[L === 'sk' ? 'sk' : L === 'en' ? 'en' : 'ua'];
+// hint never changes scoring: grading ignores whether it was opened
+function hintUI(q) { const h = HINT(q.id); return h ? `<button class="trchip hintchip" data-hint>💡 ${t('hint')}</button>` : ''; }
+function hintBox(q) { const h = HINT(q.id); return h ? `<div class="hintbox" data-hintbox>💡 ${esc(h)}</div>` : ''; }
+function wireHint(root) { const b = root.querySelector('[data-hint]'), box = root.querySelector('[data-hintbox]'); if (b && box) b.onclick = e => { e.stopPropagation(); vib(6); b.classList.toggle('on', box.classList.toggle('on')); }; }
 const TRQ = id => L === 'sk' ? null : ((DATA.tr || {})[id] || {})[L === 'en' ? 'en' : 'ua'];
 function explHTML(q) {
   const X = EXPL[q.id], x = X && X[L === 'sk' ? 'sk' : L === 'en' ? 'en' : 'ua']; if (!x) return '';
@@ -424,7 +429,7 @@ function leaveCard(cb) {
 function renderQ(q, src, first) {
   headNum(t('q').toUpperCase(), SS.done + 1, SS.total);
   const opts = optionsFor(q);
-  $('#qwrap').innerHTML = `<div class="qcard" id="qc" style="${first ? '' : 'transform:translateX(60px);opacity:0'}">${mediaHTML(q, true)}<div class="lbl qlbl" style="margin-bottom:10px"><span>${esc(nameOf(SEC[q.s]))}${src === 'rev' ? ' · ↻' : ''}</span>${TRQ(q.id) ? `<button class="trchip" id="trq">${t('tr_short')}</button>` : ''}</div><div class="qtext" id="qt">${hlText(q.q, (EXPL[q.id] || {}).trap || [])}</div>${TRQ(q.id) ? `<div class="trbox" id="trbox"><div class="lbl">№ ${q.id}</div><p>${esc(TRQ(q.id)[0])} …</p></div>` : ''}</div>
+  $('#qwrap').innerHTML = `<div class="qcard" id="qc" style="${first ? '' : 'transform:translateX(60px);opacity:0'}">${mediaHTML(q, true)}<div class="lbl qlbl" style="margin-bottom:10px"><span>${esc(nameOf(SEC[q.s]))}${src === 'rev' ? ' · ↻' : ''}</span><span class="chips2">${hintUI(q)}${TRQ(q.id) ? `<button class="trchip" id="trq">${t('tr_short')}</button>` : ''}</span></div><div class="qtext" id="qt">${hlText(q.q, (EXPL[q.id] || {}).trap || [])}</div>${hintBox(q)}${TRQ(q.id) ? `<div class="trbox" id="trbox"><div class="lbl">№ ${q.id}</div><p>${esc(TRQ(q.id)[0])} …</p></div>` : ''}</div>
     <div class="opts">${opts.map((o, i) => `<button class="opt" data-ok="${o === q.a}" style="opacity:0;transform:translateY(16px)"><span class="k">${'ABC'[i]}</span><span class="t">${esc(o)}</span></button>`).join('')}</div>`;
   $('#qpad').scrollTop = 0;
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -435,6 +440,7 @@ function renderQ(q, src, first) {
     const n = $$('#qt .w').length; $$('.opt').forEach((o, i) => { o.style.transition = 'opacity .45s,transform .6s cubic-bezier(.2,.9,.3,1)'; o.style.transitionDelay = (300 + n * 22 + i * 80) + 'ms'; o.style.opacity = 1; o.style.transform = ''; });
     setTimeout(() => $$('.opt').forEach(o => { o.style.transition = ''; o.style.transitionDelay = ''; }), 1400);
   }));
+  wireHint($('#qc'));
   const tq = $('#trq'); if (tq) tq.onclick = () => { vib(6); tq.classList.toggle('on', $('#trbox').classList.toggle('on')); };
   let answered = false;
   $$('.opt').forEach(b => {
@@ -502,10 +508,10 @@ function runExam() {
 function renderExamQ() {
   const it = EX.items[EX.i], q = it.q, n = EX.items.length;
   $('#epad').innerHTML = `<div class="qtop"><button class="exx" style="font-size:20px;width:28px">✕</button><span class="chip" id="etm">30:00</span><div style="flex:1"></div><button class="chip egrid">${EX.i + 1}/${n}</button></div>
-   <div class="qcard" style="margin-top:16px">${mediaHTML(q, false)}<div class="lbl" style="margin-bottom:10px">${esc(nameOf(SEC[q.s]))} · ${it.pts} b</div><div class="qtext in">${hlText(q.q)}</div></div>
+   <div class="qcard" style="margin-top:16px">${mediaHTML(q, false)}<div class="lbl qlbl" style="margin-bottom:10px"><span>${esc(nameOf(SEC[q.s]))} · ${it.pts} b</span>${hintUI(q)}</div><div class="qtext in">${hlText(q.q)}</div>${hintBox(q)}</div>
    <div class="opts">${it.opts.map((o, j) => `<button class="opt ${it.ans === j ? 'sel' : ''}" data-j="${j}"><span class="k">${'ABC'[j]}</span><span class="t">${esc(o)}</span></button>`).join('')}</div>
    <div class="duo2" style="margin-top:16px"><button class="cta ghost" id="eprev" ${EX.i ? '' : 'disabled'}>${t('back')}</button>${EX.i < n - 1 ? `<button class="cta" id="enext">${t('next')}<b>→</b></button>` : `<button class="cta" id="esub">${t('exam_submit')}<b>✓</b></button>`}</div>`;
-  $('#epad').scrollTop = 0;
+  $('#epad').scrollTop = 0; wireHint($('#epad'));
   $$('#epad .opt').forEach(b => b.onclick = e => { if (e.target.closest('.tw')) return; it.ans = +b.dataset.j; $$('#epad .opt').forEach(x => x.classList.toggle('sel', x === b)); vib(8); if (EX.i < n - 1) setTimeout(() => { EX.i++; renderExamQ(); }, 260); });
   $('#eprev').onclick = () => { EX.i--; renderExamQ(); };
   const nx = $('#enext'); if (nx) nx.onclick = () => { EX.i++; renderExamQ(); };

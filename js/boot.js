@@ -8,7 +8,8 @@
     ]);
     const tr = await fetch('data/tr.json?v=' + V).then(r => r.ok ? r.json() : {}).catch(() => ({}));
     const ex = await fetch('data/ex.json?v=' + V).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-    window.DATA = Object.assign({ bank, tr }, content);
+    const hint = await fetch('data/hint.json?v=' + V).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+    window.DATA = Object.assign({ bank, tr, hint }, content);
     // key words of translated questions become tappable (word -> [base form, ua, en])
     // explanations: hand-made ones (content.expl) win over generated ones; their Slovak inserts become tappable chips
     DATA.expl = Object.assign({}, ex, content.expl);

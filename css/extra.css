@@ -166,3 +166,7 @@ html,body{height:100%;margin:0}
 .lexpl .chipk{background:color-mix(in srgb,var(--a) 16%,#fff);color:color-mix(in srgb,var(--a) 70%,#1a1a1a);padding:1px 6px;border-radius:7px;font-weight:650}
 .lexpl .skx{color:color-mix(in srgb,var(--a) 70%,#1a1a1a)}
 .stepn{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--a);color:#141414;font:800 11px JB;margin:6px 4px 0 0;vertical-align:1px}
+.chips2{display:flex;gap:6px;flex:none}
+.hintchip.on{background:var(--a);color:#141414}
+.hintbox{display:none;margin-top:12px;padding:10px 13px;border-radius:14px;font:650 15px/1.4 IT;color:#2a2a28;background:color-mix(in srgb,var(--a) 14%,#fff);box-shadow:0 0 22px -12px var(--glow)}
+.hintbox.on{display:block;animation:trin .35s cubic-bezier(.2,.8,.2,1)}
