@@ -79,3 +79,5 @@ Object.assign(window.S.en, { d_learned: 'words learned', d_left: '{n} to go', d_
 Object.assign(window.S.ua, { tr_btn: 'Не зрозуміло · переклад', tr_hide: 'Сховати переклад', tr_l: 'Переклад', tr_short: 'Переклад' });
 Object.assign(window.S.en, { tr_btn: 'Unclear · translate', tr_hide: 'Hide translation', tr_l: 'Translation', tr_short: 'Translate' });
 Object.assign(window.S.sk, { tr_btn: 'Preklad', tr_hide: 'Skryť', tr_l: 'Preklad', tr_short: 'Preklad' });
+Object.assign(window.S.ua, { tr_btn: 'Не розумію · переклад питання' });
+Object.assign(window.S.en, { tr_btn: "I don't understand · translate" });

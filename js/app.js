@@ -386,12 +386,18 @@ function headNum(label, n, total) {
   rollDigits($('#qd'), String(Math.min(total, n)).padStart(2, '0'), 15);
 }
 const TRQ = id => L === 'sk' ? null : ((DATA.tr || {})[id] || {})[L === 'en' ? 'en' : 'ua'];
+function explHTML(q) {
+  const X = EXPL[q.id], x = X && X[L === 'sk' ? 'sk' : L === 'en' ? 'en' : 'ua']; if (!x) return '';
+  const key = resolveSk(x.k) ? `<span class="chipk tw" data-sk="${esc(x.k)}">${esc(x.k)}</span>` : `<span class="chipk">${esc(x.k)}</span>`;
+  return `<div class="lexpl"><div class="lxh">${esc(x.t)}</div><div class="lxattn"><span class="lbl">${t('attn')}</span> ${key}<div>${chips(x.n)}</div></div><div class="lxrule">${chips(x.x)}</div></div>`;
+}
 function renderLearn(q, first) {
   SS.learnN = (SS.learnN || 0) + 1; headNum(t('learn_new').toUpperCase(), SS.learnN, SS.learnTotal);
   const tr = TRQ(q.id);
   $('#qwrap').innerHTML = `<div class="qcard learncard" id="qc" style="${first ? '' : 'transform:translateX(60px);opacity:0'}">${mediaHTML(q, false)}<div class="lbl" style="margin-bottom:10px">${esc(nameOf(TOP[q.t]))}</div>
     <div class="qtext" id="qt">${hlText(q.q)}</div><div class="learnans qtext in">→ ${hlText(q.a)}</div>
     ${tr ? `<div class="trbox" id="trbox"><div class="lbl">${t('tr_l')} · № ${q.id}</div><p>${esc(tr[0])} <b>${esc(tr[1])}</b></p></div>` : ''}
+    ${explHTML(q)}
     ${L !== 'sk' ? `<p class="dhint" style="margin-top:12px">${t('tap_hint')}</p>` : ''}</div>
     <div class="learnbtns">${tr ? `<button class="cta ghost" id="trbtn">${t('tr_btn')}</button>` : ''}<button class="cta" id="gotit">${t('got_it')}<b>→</b></button></div>`;
   $('#qpad').scrollTop = 0;

@@ -7,8 +7,12 @@
       fetch('data/content.json?v=' + V).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
     ]);
     const tr = await fetch('data/tr.json?v=' + V).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+    const ex = await fetch('data/ex.json?v=' + V).then(r => r.ok ? r.json() : {}).catch(() => ({}));
     window.DATA = Object.assign({ bank, tr }, content);
     // key words of translated questions become tappable (word -> [base form, ua, en])
+    // explanations: hand-made ones (content.expl) win over generated ones; their Slovak inserts become tappable chips
+    DATA.expl = Object.assign({}, ex, content.expl);
+    for (const x of Object.values(ex)) for (const [k, v] of Object.entries(x.chips || {})) if (!DATA.chip[k]) DATA.chip[k] = v;
     for (const x of Object.values(tr)) for (const [w, v] of Object.entries(x.w || {})) if (!DATA.lex[w]) DATA.lex[w] = v;
     Store.setBank(bank);
     const s = document.createElement('script'); s.src = 'js/app.js?v=' + V; document.body.appendChild(s);
