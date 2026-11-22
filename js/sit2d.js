@@ -32,16 +32,17 @@
       const v = it.v, p0 = v.path[0], p = along(v.path, t);
       if (it.dot) { it.el.style.left = p[0] * 100 + '%'; it.el.style.top = p[1] * 100 + '%'; it.el.style.opacity = t > .9 ? (1 - t) * 10 : 1; return; }
       const dx = (p[0] - p0[0]) * box.clientWidth, dy = (p[1] - p0[1]) * box.clientHeight, sc = 1 + ((v.scale || 1) - 1) * t;
-      it.el.style.transform = `translate(${dx}px,${dy}px) scale(${sc})`; it.el.style.opacity = t > .72 ? Math.max(0, 1 - (t - .72) / .28) : 1;
+      it.el.style.transform = `translate(${dx}px,${dy}px) scale(${sc})`; it.el.style.opacity = t > .8 ? Math.max(0, 1 - (t - .8) / .2) : 1;
       if (it.badge) { it.badge.style.left = (v.box[0] + v.box[2]) / 2 * 100 + '%'; it.badge.style.top = v.box[1] * 100 + '%'; it.badge.style.transform = `translate(calc(-50% + ${dx}px), calc(-60% + ${dy}px))`; it.badge.style.opacity = t > .8 ? (1 - t) * 5 : 1; }
     }
     async function play(order) {
       if (!started) { started = true; box.classList.add('cut'); }   // switch to the background without the moving vehicles
-      items.forEach(it => setT(it, 0));
+      items.forEach(it => { setT(it, 0); it.seg = 0; it.nseg = order.filter(g => g.includes(it.v.id)).length || 1; });
       for (let n = 0; n < order.length && alive; n++) {
-        const its = items.filter(i => order[n].includes(i.v.id));
-        its.forEach(i => { const b = document.createElement('div'); b.className = 's2badge'; b.textContent = n + 1; box.appendChild(b); i.badge = b; if (i.dot) { b.style.display = 'none'; i.el.dataset.n = n + 1; i.el.classList.add('go'); } });
-        await new Promise(res => { const t0 = performance.now(), D = 1800; const step = now => { if (!alive) return res(); const k = Math.min(1, (now - t0) / D); its.forEach(i => setT(i, ease(k))); k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
+        const its = items.filter(i => order[n].includes(i.v.id));   // a vehicle listed twice moves in two parts (e.g. enters, waits, finishes)
+        its.forEach(i => { if (i.badge) i.badge.remove(); const b = document.createElement('div'); b.className = 's2badge'; b.textContent = n + 1; box.appendChild(b); i.badge = b; if (i.dot) { b.style.display = 'none'; i.el.dataset.n = n + 1; i.el.classList.add('go'); } });
+        await new Promise(res => { const t0 = performance.now(), D = 1800; const step = now => { if (!alive) return res(); const k = Math.min(1, (now - t0) / D); its.forEach(i => setT(i, (i.seg + ease(k)) / i.nseg)); k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
+        its.forEach(i => i.seg++);
         await new Promise(r => setTimeout(r, 200));
       }
     }
